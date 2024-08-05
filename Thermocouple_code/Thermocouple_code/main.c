@@ -14,7 +14,7 @@ void lcd_cmd(uint8_t cmd); // Sends a command to the LCD
 void lcd_data(char data); // Sends data (a character) to the LCD
 void lcd_print(char *str); // Prints a string on the LCD
 void lcd_set_cursor(uint8_t row, uint8_t col); // Sets the cursor position on the LCD
-void display_temperatures_test(int thermocouple_temp, int internal_temp); // Displays thermocouple and internal temperatures on the LCD
+void display_temperatures_test(float thermocouple_temp, float internal_temp); // Displays thermocouple and internal temperatures on the LCD
 void int_to_string_fixed(char* buffer, int value, uint8_t width); // Converts an integer to a fixed-width string
 
 void spi_init(void); // Initializes SPI communication
@@ -55,19 +55,15 @@ void lcd_init(void) {
 }
 
 void lcd_cmd(uint8_t cmd) {
-	DDRD = 0xFF; // Set PORTD as output for LCD data
-	DDRC |= ((1 << E) | (1 << RS)); // Set RS and E as output
 	PORTC &= ~(1 << RS); // RS = 0 for command
 	PORTD = cmd; // Put command on data bus
 	PORTC |= (1 << E); // Enable pulse
 	_delay_us(5);
 	PORTC &= ~(1 << E); // Disable pulse
-	_delay_ms(100); // Wait for command to be processed
+	_delay_ms(2); // Wait for command to be processed
 }
 
 void lcd_data(char data) {
-	DDRD = 0xFF; // Set PORTD as output for LCD data
-	DDRC |= ((1 << E) | (1 << RS)); // Set RS and E as output
 	PORTC |= (1 << RS); // RS = 1 for data
 	PORTD = data; // Put data on data bus
 	PORTC |= (1 << E); // Enable pulse
@@ -149,12 +145,12 @@ void int_to_string_fixed(char* buffer, int value, uint8_t width) {
 	}
 }
 
-void display_temperatures_test(int thermocouple_temp, int internal_temp) {
+void display_temperatures_test(float thermocouple_temp, float internal_temp) {
 	char buffer[16];
 	
 	lcd_cmd(0x80 | 0x00);  // Move cursor to the first line
-	if (thermocouple_temp >= 0) {
-		int_to_string_fixed(buffer, thermocouple_temp, 4); // Convert temperature to string
+	if (!isnan(thermocouple_temp)) {
+		int_to_string_fixed(buffer, (int)thermocouple_temp, 4); // Convert temperature to string
 		lcd_print("Temp:");
 		lcd_print(buffer);
 		lcd_print("_C");
@@ -163,8 +159,8 @@ void display_temperatures_test(int thermocouple_temp, int internal_temp) {
 	}
 	
 	lcd_cmd(0x80 | 0x40);  // Move cursor to the second line
-	if (internal_temp >= 0) {
-		int_to_string_fixed(buffer, internal_temp, 4); // Convert temperature to string
+	if (!isnan(internal_temp)) {
+		int_to_string_fixed(buffer, (int)internal_temp, 4); // Convert temperature to string
 		lcd_print("Cold:");
 		lcd_print(buffer);
 		lcd_print("_C");
